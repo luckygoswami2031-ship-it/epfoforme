@@ -1,86 +1,168 @@
+<!-- ============================= -->
+<!-- PRO AUTO REFRESH TOOL (ADVANCED) -->
+<!-- Multi-feature | Stable | Modular -->
+<!-- ============================= -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auto Refresh Tool</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 10px;
-      width: 400px;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    }
-    input, button {
-      width: 90%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      border: none;
-    }
-    input {
-      background: #334155;
-      color: white;
-    }
-    button {
-      background: #22c55e;
-      color: white;
-      cursor: pointer;
-    }
-    iframe {
-      width: 100%;
-      height: 300px;
-      border: none;
-      margin-top: 10px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Auto Refresh Tool</title>
+
+<style>
+body {
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f172a;
+  color:#fff;
+}
+
+.container {
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.card {
+  background:#1e293b;
+  padding:20px;
+  border-radius:12px;
+  margin-top:15px;
+}
+
+input, select, button {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:8px;
+  border:none;
+}
+
+input, select {
+  background:#334155;
+  color:#fff;
+}
+
+button {
+  background:#22c55e;
+  cursor:pointer;
+}
+
+.stop { background:#ef4444; }
+
+iframe {
+  width:100%;
+  height:400px;
+  margin-top:15px;
+  border-radius:10px;
+  border:none;
+  background:#fff;
+}
+
+.status { margin-top:10px; }
+
+</style>
 </head>
 <body>
 
 <div class="container">
-  <h2>Auto Refresh Website</h2>
-  <input type="text" id="url" placeholder="Enter website URL">
-  <input type="number" id="time" placeholder="Refresh time (seconds)">
-  <button onclick="startRefresh()">Start</button>
-  <button onclick="stopRefresh()">Stop</button>
-  <iframe id="frame"></iframe>
+  <h1>⚡ Ultimate Auto Refresh Tool</h1>
+
+  <div class="card">
+
+    <input id="url" placeholder="Enter URL">
+
+    <input id="min" type="number" placeholder="Min seconds">
+    <input id="max" type="number" placeholder="Max seconds (optional)">
+
+    <select id="mode">
+      <option value="iframe">Iframe Mode</option>
+      <option value="tab">New Tab Mode</option>
+    </select>
+
+    <button onclick="start()">Start</button>
+    <button class="stop" onclick="stop()">Stop</button>
+
+    <div class="status" id="status">Idle</div>
+
+    <iframe id="frame"></iframe>
+
+  </div>
 </div>
 
 <script>
-  let interval;
+let timer = null;
+let tab = null;
+let countdownTimer = null;
 
-  function startRefresh() {
-    const url = document.getElementById('url').value;
-    const time = document.getElementById('time').value * 1000;
+function fixUrl(url){
+  if(!url.startsWith('http')) return 'https://' + url;
+  return url;
+}
 
-    if (!url || !time) {
-      alert('Enter URL and time');
-      return;
+function getRandom(min,max){
+  return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+function start(){
+  let url = fixUrl(document.getElementById('url').value.trim());
+  let min = parseInt(document.getElementById('min').value);
+  let max = parseInt(document.getElementById('max').value) || min;
+  let mode = document.getElementById('mode').value;
+
+  if(!url || !min){
+    alert('Enter valid details');
+    return;
+  }
+
+  stop();
+
+  if(mode==='iframe'){
+    document.getElementById('frame').src = url;
+  } else {
+    tab = window.open(url,'_blank');
+  }
+
+  loop(url,min,max,mode);
+}
+
+function loop(url,min,max,mode){
+  let time = getRandom(min,max)*1000;
+
+  document.getElementById('status').innerText = 'Next refresh in ' + (time/1000) + ' sec';
+
+  let remaining = time/1000;
+
+  countdownTimer = setInterval(()=>{
+    remaining--;
+    document.getElementById('status').innerText = 'Next refresh in ' + remaining + ' sec';
+  },1000);
+
+  timer = setTimeout(()=>{
+    clearInterval(countdownTimer);
+
+    if(mode==='iframe'){
+      document.getElementById('frame').src = url + '?t=' + Date.now();
+    } else {
+      if(tab && !tab.closed){
+        tab.location.href = url + '?t=' + Date.now();
+      } else {
+        stop();
+        return;
+      }
     }
 
-    const frame = document.getElementById('frame');
-    frame.src = url;
+    loop(url,min,max,mode);
 
-    interval = setInterval(() => {
-      frame.src = frame.src;
-    }, time);
-  }
+  },time);
+}
 
-  function stopRefresh() {
-    clearInterval(interval);
-  }
+function stop(){
+  clearTimeout(timer);
+  clearInterval(countdownTimer);
+  document.getElementById('status').innerText='Stopped';
+}
 </script>
 
 </body>
